@@ -15,6 +15,9 @@ android {
         targetSdk 34
         versionCode 1
         versionName "1.0"
+        
+        // Inject API Key from Environment Variable (CI/CD) or local.properties
+        buildConfigField "String", "GROQ_API_KEY", "\"${System.getenv('GROQ_API_KEY') ?: ''}\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -40,6 +43,7 @@ android {
 
     buildFeatures {
         compose true
+        buildConfig true
     }
 
     composeOptions {

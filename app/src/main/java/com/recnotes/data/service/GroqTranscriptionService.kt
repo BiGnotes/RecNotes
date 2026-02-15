@@ -18,8 +18,13 @@ class GroqTranscriptionService @Inject constructor(
 ) : TranscriptionService {
 
     override suspend fun transcribe(audioPath: String): String {
-        val apiKey = settingsRepository.getGroqApiKey().first()
+        var apiKey = settingsRepository.getGroqApiKey().first()
         if (apiKey.isEmpty()) {
+            // Fallback to BuildConfig if available (injected via CI/CD)
+            apiKey = com.recnotes.BuildConfig.GROQ_API_KEY
+        }
+        
+        if (apiKey.isEmpty() || apiKey == "null") {
             throw Exception("Please configure Groq API Key in settings")
         }
         val authorization = "Bearer $apiKey"
