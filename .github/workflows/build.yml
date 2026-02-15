@@ -30,6 +30,7 @@ jobs:
       - name: Build with Gradle
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          SILICON_FLOW_API_KEY: ${{ secrets.SILICON_FLOW_API_KEY }}
         run: ./gradlew assembleDebug
 
       - name: Upload APK to Artifacts
@@ -59,9 +60,34 @@ jobs:
           fi
           
           # 2. Upload via curl
-          curl -f -u "${WEBDAV_USERNAME}:${WEBDAV_PASSWORD}" -T "$FILE_PATH" "$WEBDAV_URL$FILE_NAME" || { echo "Upload failed"; exit 1; }
+          echo "Uploading via WebDAV..."
+          if ! curl -f -u "${WEBDAV_USERNAME}:${WEBDAV_PASSWORD}" -T "$FILE_PATH" "$WEBDAV_URL$FILE_NAME"; then
+            echo "::error::Upload failed (curl returned error)"
+            exit 1
+          fi
+
+          # 3. Verify Upload (Check Content-Length)
+          echo "Verifying upload integrity..."
+          LOCAL_SIZE=$(stat -c%s "$FILE_PATH")
+          # Get remote size. Use -I for HEAD request, grep Content-Length, extract value
+          REMOTE_SIZE=$(curl -sI -u "${WEBDAV_USERNAME}:${WEBDAV_PASSWORD}" "$WEBDAV_URL$FILE_NAME" | grep -i "Content-Length" | awk '{print $2}' | tr -d '\r')
           
-          echo "Upload successful. Starting cleanup..."
+          echo "Local size: $LOCAL_SIZE bytes"
+          echo "Remote size: $REMOTE_SIZE bytes"
+
+          # Basic check: if REMOTE_SIZE is empty or doesn't match, fail
+          if [ -z "$REMOTE_SIZE" ]; then
+             echo "::warning::Could not fetch remote Content-Length. Assuming upload OK but unverified."
+          elif [ "$LOCAL_SIZE" != "$REMOTE_SIZE" ]; then
+            echo "::error::Upload verification failed! Size mismatch (Local: $LOCAL_SIZE vs Remote: $REMOTE_SIZE)."
+            # Attempt to delete the corrupted file so we don't accidentally download a bad one
+            curl -s -u "${WEBDAV_USERNAME}:${WEBDAV_PASSWORD}" -X DELETE "$WEBDAV_URL$FILE_NAME"
+            exit 1
+          else
+             echo "Verification successful: Sizes match."
+          fi
+          
+          echo "Starting cleanup..."
 
           # 3. List files, sort by time (assuming filename format helps or WebDAV property), and delete old ones
           # Since WebDAV listing can be tricky with curl/grep/xml, we rely on the consistent naming: RecNotes_debug_YYYYMMDD_HHMMSS_SHA.apk

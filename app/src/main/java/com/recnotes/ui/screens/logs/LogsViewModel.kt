@@ -24,9 +24,33 @@ class LogsViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
+    private val _editingLog = kotlinx.coroutines.flow.MutableStateFlow<LogEntry?>(null)
+    val editingLog: StateFlow<LogEntry?> = _editingLog
+
     fun processLog(logId: Long) {
         viewModelScope.launch {
-            processLogUseCase(logId)
+            val result = processLogUseCase(logId)
+            result.onSuccess {
+                // Fetch the updated log to open in editor
+                val updatedLog = repository.getLogById(logId)
+                _editingLog.value = updatedLog
+            }
+        }
+    }
+
+    fun startEditing(log: LogEntry) {
+        _editingLog.value = log
+    }
+
+    fun dismissEditing() {
+        _editingLog.value = null
+    }
+
+    fun saveTranscript(log: LogEntry, newTranscript: String) {
+        viewModelScope.launch {
+            val updatedLog = log.copy(rawTranscript = newTranscript)
+            repository.updateLog(updatedLog)
+            _editingLog.value = null
         }
     }
 }

@@ -18,6 +18,7 @@ android {
         
         // Inject API Key from Environment Variable (CI/CD) or local.properties
         buildConfigField "String", "GROQ_API_KEY", "\"${System.getenv('GROQ_API_KEY') ?: ''}\""
+        buildConfigField "String", "SILICON_FLOW_API_KEY", "\"${System.getenv('SILICON_FLOW_API_KEY') ?: ''}\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -29,6 +30,10 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-DEBUG"
         }
     }
 

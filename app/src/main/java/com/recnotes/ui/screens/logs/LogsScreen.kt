@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -31,6 +32,15 @@ fun LogsScreen(
     viewModel: LogsViewModel = hiltViewModel()
 ) {
     val logs by viewModel.logs.collectAsState()
+    val editingLog by viewModel.editingLog.collectAsState()
+    
+    if (editingLog != null) {
+        TranscriptEditorDialog(
+            log = editingLog!!,
+            onDismiss = { viewModel.dismissEditing() },
+            onSave = { newTranscript -> viewModel.saveTranscript(editingLog!!, newTranscript) }
+        )
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
@@ -64,6 +74,41 @@ fun LogsScreen(
             }
         }
     }
+}
+
+@Composable
+fun TranscriptEditorDialog(
+    log: LogEntry,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit
+) {
+    // Correct usage of remember and mutableStateOf with imports or fully qualified
+    var text by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(log.rawTranscript) }
+    
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("编辑转写内容") },
+        text = {
+            androidx.compose.material3.OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 200.dp, max = 400.dp),
+                placeholder = { Text("转写内容为空...") }
+            )
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(onClick = { onSave(text) }) {
+                Text("保存")
+            }
+        },
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) {
+                Text("取消")
+            }
+        }
+    )
 }
 
 @Composable

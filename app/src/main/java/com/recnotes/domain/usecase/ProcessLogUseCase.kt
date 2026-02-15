@@ -2,6 +2,7 @@ package com.recnotes.domain.usecase
 
 import com.recnotes.data.repository.LogRepository
 import com.recnotes.domain.service.TranscriptionService
+import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -27,13 +28,31 @@ class ProcessLogUseCase @Inject constructor(
                 log.rawTranscript
             }
 
-            // Update transcript immediately
-            val logWithTranscript = log.copy(rawTranscript = transcript)
+            // Update transcript immediately and remove audio path
+            val logWithTranscript = log.copy(
+                rawTranscript = transcript,
+                audioPath = "" // Clear audio path reference
+            )
             logRepository.updateLog(logWithTranscript)
 
-            // 2. Analyze
-            val feedback = processTranscriptUseCase(transcript)
+            // Delete local audio file
+            try {
+                if (log.audioPath.isNotEmpty()) {
+                    val audioFile = File(log.audioPath)
+                    if (audioFile.exists()) {
+                        audioFile.delete()
+                    }
+                }
+            } catch (e: Exception) {
+                // Ignore deletion errors, just log locally if possible
+            }
 
+            // 2. Analyze (Disabled for now)
+            // val feedback = processTranscriptUseCase(transcript)
+            // For now, just mark it as transcribed and return
+            Result.success(Unit)
+
+            /*
             when (feedback) {
                 is AIFeedbackResult.Success -> {
                     val finalLog = logWithTranscript.copy(
@@ -49,6 +68,7 @@ class ProcessLogUseCase @Inject constructor(
                     Result.failure(Exception(feedback.message))
                 }
             }
+            */
         } catch (e: Exception) {
             Result.failure(e)
         }
