@@ -37,7 +37,7 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload APK to WebDAV
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
         env:
           WEBDAV_URL: 'https://alist.ranotes.com:4433/dav/Android%20App/'
           WEBDAV_USERNAME: 'claw'
@@ -49,6 +49,11 @@ jobs:
           FILE_PATH="app/build/outputs/apk/debug/app-debug.apk"
           
           echo "Uploading $FILE_PATH to $WEBDAV_URL$FILE_NAME ..."
+          
+          if [ -z "$WEBDAV_PASSWORD" ]; then
+            echo "Error: WEBDAV_PASSWORD secret is not set!"
+            exit 1
+          fi
           
           # Upload via curl
           curl -v -u "${WEBDAV_USERNAME}:${WEBDAV_PASSWORD}" -T "$FILE_PATH" "$WEBDAV_URL$FILE_NAME"
