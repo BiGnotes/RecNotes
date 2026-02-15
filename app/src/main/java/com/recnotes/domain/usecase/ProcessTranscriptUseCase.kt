@@ -69,30 +69,43 @@ $transcript
 
     private fun parseAIResponse(response: String): AIFeedbackResult {
         return try {
-            val json = response.substringAfter("{").substringBeforeLast("}")
-            val time = extractJsonValue(json, "time")
-            val location = extractJsonValue(json, "location")
-            val workContent = extractJsonValue(json, "workContent")
-            val duration = extractJsonValue(json, "duration")
-            val summary = extractJsonValue(json, "summary")
+            val json = cleanJson(response)
+            val analysis = com.google.gson.Gson().fromJson(json, AIAnalysisResult::class.java)
 
             AIFeedbackResult.Success(
-                time = time,
-                location = location,
-                workContent = workContent,
-                duration = duration,
-                summary = summary
+                time = analysis.time ?: "",
+                location = analysis.location ?: "",
+                workContent = analysis.workContent ?: "",
+                duration = analysis.duration ?: "",
+                summary = analysis.summary ?: ""
             )
         } catch (e: Exception) {
             AIFeedbackResult.Error("解析 AI 响应失败: ${e.message}")
         }
     }
 
+    private fun cleanJson(json: String): String {
+        val start = json.indexOf("{")
+        val end = json.lastIndexOf("}")
+        if (start != -1 && end != -1 && end > start) {
+            return json.substring(start, end + 1)
+        }
+        return json
+    }
+
     private fun extractJsonValue(json: String, key: String): String {
-        val pattern = """"$key"\s*:\s*"([^"]*)"""".toRegex()
-        return pattern.find(json)?.groupValues?.get(1) ?: ""
+        // Deprecated, using Gson
+        return ""
     }
 }
+
+data class AIAnalysisResult(
+    val time: String?,
+    val location: String?,
+    val workContent: String?,
+    val duration: String?,
+    val summary: String?
+)
 
 sealed class AIFeedbackResult {
     data class Success(

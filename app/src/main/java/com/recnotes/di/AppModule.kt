@@ -16,6 +16,12 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideTranscriptionService(): com.recnotes.domain.service.TranscriptionService {
+        return com.recnotes.data.service.MockTranscriptionService()
+    }
+
+    @Provides
+    @Singleton
     fun provideAudioRecorder(@ApplicationContext context: Context): AudioRecorder {
         return AndroidAudioRecorder(context)
     }

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.recnotes.domain.model.LogEntry
 import com.recnotes.data.repository.LogRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -12,7 +13,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LogsViewModel @Inject constructor(
-    repository: LogRepository
+    private val repository: LogRepository,
+    private val processLogUseCase: com.recnotes.domain.usecase.ProcessLogUseCase
 ) : ViewModel() {
 
     val logs: StateFlow<List<LogEntry>> = repository.getAllLogs()
@@ -21,4 +23,10 @@ class LogsViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+
+    fun processLog(logId: Long) {
+        viewModelScope.launch {
+            processLogUseCase(logId)
+        }
+    }
 }

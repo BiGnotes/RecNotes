@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -55,7 +56,10 @@ fun LogsScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(logs) { log ->
-                    LogCard(log = log)
+                    LogCard(
+                        log = log,
+                        onProcess = { viewModel.processLog(log.id) }
+                    )
                 }
             }
         }
@@ -63,7 +67,10 @@ fun LogsScreen(
 }
 
 @Composable
-fun LogCard(log: LogEntry) {
+fun LogCard(
+    log: LogEntry,
+    onProcess: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -101,6 +108,13 @@ fun LogCard(log: LogEntry) {
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = 8.dp)
             )
+
+            Button(
+                onClick = onProcess,
+                modifier = Modifier.padding(top = 8.dp)
+            ) {
+                Text("智能分析")
+            }
         }
     }
 }
