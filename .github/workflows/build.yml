@@ -30,8 +30,27 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew assembleDebug
 
-      - name: Upload APK
+      - name: Upload APK to Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
           path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload APK to WebDAV
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          WEBDAV_URL: 'https://alist.ranotes.com:4433/dav/Android%20App/'
+          WEBDAV_USERNAME: 'claw'
+          WEBDAV_PASSWORD: ${{ secrets.WEBDAV_PASSWORD }}
+        run: |
+          # Install curl if missing (usually present)
+          sudo apt-get update && sudo apt-get install -y curl
+          
+          # Define file name with commit hash for uniqueness
+          FILE_NAME="RecNotes-debug-${GITHUB_SHA::7}.apk"
+          FILE_PATH="app/build/outputs/apk/debug/app-debug.apk"
+          
+          echo "Uploading $FILE_PATH to $WEBDAV_URL$FILE_NAME ..."
+          
+          # Upload via curl
+          curl -v -u "$WEBDAV_USERNAME:$WEBDAV_PASSWORD" -T "$FILE_PATH" "$WEBDAV_URL$FILE_NAME"
