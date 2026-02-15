@@ -43,14 +43,12 @@ jobs:
           WEBDAV_USERNAME: 'claw'
           WEBDAV_PASSWORD: ${{ secrets.WEBDAV_PASSWORD }}
         run: |
-          # Install curl if missing (usually present)
-          sudo apt-get update && sudo apt-get install -y curl
-          
           # Define file name with commit hash for uniqueness
-          FILE_NAME="RecNotes-debug-${GITHUB_SHA::7}.apk"
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          FILE_NAME="RecNotes-debug-${SHORT_SHA}.apk"
           FILE_PATH="app/build/outputs/apk/debug/app-debug.apk"
           
           echo "Uploading $FILE_PATH to $WEBDAV_URL$FILE_NAME ..."
           
           # Upload via curl
-          curl -v -u "$WEBDAV_USERNAME:$WEBDAV_PASSWORD" -T "$FILE_PATH" "$WEBDAV_URL$FILE_NAME"
+          curl -v -u "${WEBDAV_USERNAME}:${WEBDAV_PASSWORD}" -T "$FILE_PATH" "$WEBDAV_URL$FILE_NAME"
