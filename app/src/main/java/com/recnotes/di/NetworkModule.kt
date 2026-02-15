@@ -1,5 +1,6 @@
 package com.recnotes.di
 
+import com.recnotes.data.remote.GroqApi
 import com.recnotes.data.remote.SiliconFlowApi
 import dagger.Module
 import dagger.Provides
@@ -10,13 +11,15 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
+import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val BASE_URL = "https://api.siliconflow.cn/"
+    private const val SILICON_BASE_URL = "https://api.siliconflow.cn/"
+    private const val GROQ_BASE_URL = "https://api.groq.com/"
 
     @Provides
     @Singleton
@@ -35,9 +38,10 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    @Named("SiliconFlow")
+    fun provideSiliconRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(SILICON_BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
@@ -45,7 +49,24 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideSiliconFlowApi(retrofit: Retrofit): SiliconFlowApi {
+    @Named("Groq")
+    fun provideGroqRetrofit(okHttpClient: OkHttpClient): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(GROQ_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideSiliconFlowApi(@Named("SiliconFlow") retrofit: Retrofit): SiliconFlowApi {
         return retrofit.create(SiliconFlowApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGroqApi(@Named("Groq") retrofit: Retrofit): GroqApi {
+        return retrofit.create(GroqApi::class.java)
     }
 }

@@ -16,8 +16,11 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideTranscriptionService(): com.recnotes.domain.service.TranscriptionService {
-        return com.recnotes.data.service.MockTranscriptionService()
+    fun provideTranscriptionService(
+        api: com.recnotes.data.remote.GroqApi,
+        settingsRepository: com.recnotes.ui.screens.settings.SettingsRepository
+    ): com.recnotes.domain.service.TranscriptionService {
+        return com.recnotes.data.service.GroqTranscriptionService(api, settingsRepository)
     }
 
     @Provides

@@ -17,6 +17,9 @@ class SettingsViewModel @Inject constructor(
     private val _apiKey = MutableStateFlow("")
     val apiKey: StateFlow<String> = _apiKey.asStateFlow()
 
+    private val _groqApiKey = MutableStateFlow("")
+    val groqApiKey: StateFlow<String> = _groqApiKey.asStateFlow()
+
     private val _modelName = MutableStateFlow("deepseek-ai/DeepSeek-R1-0528-Qwen3-8B")
     val modelName: StateFlow<String> = _modelName.asStateFlow()
 
@@ -24,6 +27,11 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.getApiKey().collect { key ->
                 _apiKey.value = key
+            }
+        }
+        viewModelScope.launch {
+            settingsRepository.getGroqApiKey().collect { key ->
+                _groqApiKey.value = key
             }
         }
         viewModelScope.launch {
@@ -37,6 +45,10 @@ class SettingsViewModel @Inject constructor(
         _apiKey.value = key
     }
 
+    fun setGroqApiKey(key: String) {
+        _groqApiKey.value = key
+    }
+
     fun setModelName(model: String) {
         _modelName.value = model
     }
@@ -44,6 +56,7 @@ class SettingsViewModel @Inject constructor(
     fun saveSettings() {
         viewModelScope.launch {
             settingsRepository.saveApiKey(_apiKey.value)
+            settingsRepository.saveGroqApiKey(_groqApiKey.value)
             settingsRepository.saveModelName(_modelName.value)
         }
     }

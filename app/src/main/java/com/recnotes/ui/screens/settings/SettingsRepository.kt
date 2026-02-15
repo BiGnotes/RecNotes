@@ -21,10 +21,15 @@ class SettingsRepository @Inject constructor(
     companion object {
         private val API_KEY = stringPreferencesKey("api_key")
         private val MODEL_NAME = stringPreferencesKey("model_name")
+        private val GROQ_API_KEY = stringPreferencesKey("groq_api_key")
     }
 
     fun getApiKey(): Flow<String> = context.dataStore.data.map { preferences ->
         preferences[API_KEY] ?: ""
+    }
+
+    fun getGroqApiKey(): Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[GROQ_API_KEY] ?: ""
     }
 
     fun getModelName(): Flow<String> = context.dataStore.data.map { preferences ->
@@ -34,6 +39,12 @@ class SettingsRepository @Inject constructor(
     suspend fun saveApiKey(key: String) {
         context.dataStore.edit { preferences ->
             preferences[API_KEY] = key
+        }
+    }
+
+    suspend fun saveGroqApiKey(key: String) {
+        context.dataStore.edit { preferences ->
+            preferences[GROQ_API_KEY] = key
         }
     }
 

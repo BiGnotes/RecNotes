@@ -27,6 +27,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val apiKey by viewModel.apiKey.collectAsState()
+    val groqApiKey by viewModel.groqApiKey.collectAsState()
     val modelName by viewModel.modelName.collectAsState()
 
     Column(
@@ -59,8 +60,19 @@ fun SettingsScreen(
         OutlinedTextField(
             value = apiKey,
             onValueChange = { viewModel.setApiKey(it) },
-            label = { Text("API Key (硅基流动)") },
+            label = { Text("SiliconFlow API Key") },
             placeholder = { Text("sk-...") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = groqApiKey,
+            onValueChange = { viewModel.setGroqApiKey(it) },
+            label = { Text("Groq API Key (转写服务)") },
+            placeholder = { Text("gsk_...") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
