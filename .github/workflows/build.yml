@@ -38,16 +38,17 @@ jobs:
           name: app-debug
           path: app/build/outputs/apk/debug/app-debug.apk
 
-      - name: Upload APK to WebDAV
+      - name: Upload APK to WebDAV and Cleanup
         if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
         env:
           WEBDAV_URL: 'https://alist.ranotes.com:4433/dav/Android%20App/'
           WEBDAV_USERNAME: 'claw'
           WEBDAV_PASSWORD: ${{ secrets.WEBDAV_PASSWORD }}
         run: |
-          # Define file name with commit hash for uniqueness
+          # 1. Define file name with timestamp and commit hash
+          TIMESTAMP=$(date +'%Y%m%d_%H%M%S')
           SHORT_SHA=$(git rev-parse --short HEAD)
-          FILE_NAME="RecNotes-debug-${SHORT_SHA}.apk"
+          FILE_NAME="RecNotes_debug_${TIMESTAMP}_${SHORT_SHA}.apk"
           FILE_PATH="app/build/outputs/apk/debug/app-debug.apk"
           
           echo "Uploading $FILE_PATH to $WEBDAV_URL$FILE_NAME ..."
@@ -57,5 +58,45 @@ jobs:
             exit 1
           fi
           
-          # Upload via curl
-          curl -v -u "${WEBDAV_USERNAME}:${WEBDAV_PASSWORD}" -T "$FILE_PATH" "$WEBDAV_URL$FILE_NAME"
+          # 2. Upload via curl
+          curl -f -u "${WEBDAV_USERNAME}:${WEBDAV_PASSWORD}" -T "$FILE_PATH" "$WEBDAV_URL$FILE_NAME" || { echo "Upload failed"; exit 1; }
+          
+          echo "Upload successful. Starting cleanup..."
+
+          # 3. List files, sort by time (assuming filename format helps or WebDAV property), and delete old ones
+          # Since WebDAV listing can be tricky with curl/grep/xml, we rely on the consistent naming: RecNotes_debug_YYYYMMDD_HHMMSS_SHA.apk
+          # We will fetch the file list, filter for our APKs, sort reverse (newest first), skip top 3, and delete the rest.
+          
+          # Fetch file list (PROPFIND)
+          # Note: Parsing XML with grep/sed is fragile but often sufficient for simple lists.
+          # We look for <D:href>.../Android%20App/RecNotes_debug_...</D:href>
+          
+          FILES=$(curl -s -u "${WEBDAV_USERNAME}:${WEBDAV_PASSWORD}" -X PROPFIND "$WEBDAV_URL" --header "Depth: 1" | \
+            grep -oE '/dav/Android%20App/RecNotes_debug_[0-9]{8}_[0-9]{6}_[a-f0-9]+\.apk' | \
+            sort -r)
+          
+          echo "Found files:"
+          echo "$FILES"
+          
+          # Count files
+          COUNT=$(echo "$FILES" | wc -l)
+          echo "Total APKs found: $COUNT"
+          
+          if [ "$COUNT" -gt 3 ]; then
+            # Get files to delete (skip first 3)
+            DELETE_LIST=$(echo "$FILES" | tail -n +4)
+            
+            for REMOTE_FILE in $DELETE_LIST; do
+              # Construct full delete URL. The REMOTE_FILE path from grep includes /dav/Android%20App/...
+              # We need to be careful with URL construction. 
+              # The WEBDAV_URL is https://alist.ranotes.com:4433/dav/Android%20App/
+              # The REMOTE_FILE is /dav/Android%20App/RecNotes_debug_...
+              # So we can just append the domain part.
+              
+              DELETE_URL="https://alist.ranotes.com:4433${REMOTE_FILE}"
+              echo "Deleting old version: $DELETE_URL"
+              curl -s -u "${WEBDAV_USERNAME}:${WEBDAV_PASSWORD}" -X DELETE "$DELETE_URL"
+            done
+          else
+            echo "No cleanup needed (<= 3 versions)."
+          fi
