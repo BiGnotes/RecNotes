@@ -6,7 +6,7 @@ import com.recnotes.domain.model.LogEntry
 
 @Database(
     entities = [LogEntry::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class RecNotesDatabase : RoomDatabase() {

@@ -22,7 +22,9 @@ object DatabaseModule {
             context,
             RecNotesDatabase::class.java,
             "recnotes_db"
-        ).build()
+        )
+        .fallbackToDestructiveMigration()
+        .build()
     }
 
     @Provides

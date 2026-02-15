@@ -9,6 +9,7 @@ data class LogEntry(
     val id: Long = 0,
     val title: String,
     val content: String,
+    val audioPath: String = "",
     val rawTranscript: String = "",
     val location: String = "",
     val duration: String = "",
